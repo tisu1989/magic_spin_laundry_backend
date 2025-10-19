@@ -1,68 +1,35 @@
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  phone: string;
-  address?: string;
-  role: 'customer' | 'admin';
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  full_name: string;
-  phone: string;
-  address?: string;
-}
+export const generateToken = (
+  userId: string,
+  email: string,
+  role: string
+): string => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not defined");
+  }
+  return jwt.sign({ userId, email, role }, secret, { expiresIn: "7d" });
+};
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
+export const hashPassword = async (password: string): Promise<string> => {
+  const saltRounds = 12;
+  return await bcrypt.hash(password, saltRounds);
+};
 
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
+export const comparePassword = async (
+  password: string,
+  hashedPassword: string
+): Promise<boolean> => {
+  return await bcrypt.compare(password, hashedPassword);
+};
 
-export interface Order {
-  id: string;
-  user_id: string;
-  service_type: 'wash_and_fold' | 'dry_clean' | 'ironing' | 'premium_care';
-  quantity: number;
-  total_amount: number;
-  status: 'pending' | 'confirmed' | 'picked_up' | 'washing' | 'ready' | 'delivered' | 'cancelled';
-  pickup_address: string;
-  delivery_address: string;
-  scheduled_pickup: string;
-  scheduled_delivery: string;
-  special_instructions?: string;
-  created_at: string;
-  updated_at: string;
-}
+export const generateVerificationToken = (): string => {
+  return uuidv4();
+};
 
-export interface Payment {
-  id: string;
-  order_id: string;
-  amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  payment_method: 'card' | 'upi' | 'cash';
-  stripe_payment_intent_id?: string;
-  transaction_id?: string;
-  created_at: string;
-}
-
-export interface DecodedToken {
-  userId: string;
-  email: string;
-  role: string;
-  iat: number;
-  exp: number;
-}
-
-export interface RequestWithUser extends Express.Request {
-  user?: User;
-}
+export const generateResetToken = (): string => {
+  return uuidv4();
+};
